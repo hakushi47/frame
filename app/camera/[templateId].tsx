@@ -47,7 +47,12 @@ export default function CameraScreen() {
       <CameraView style={StyleSheet.absoluteFillObject} facing="back" />
 
       {template?.referenceImagePath ? (
-        <Image source={{ uri: template.referenceImagePath }} style={styles.overlay} />
+        <Image
+          pointerEvents="none"
+          source={{ uri: template.referenceImagePath }}
+          style={styles.overlay}
+          resizeMode="cover"
+        />
       ) : null}
 
       <View style={styles.bottomBar}>
@@ -91,8 +96,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.35,
-    resizeMode: 'cover',
+    opacity: 0.5,
   },
   bottomBar: {
     position: 'absolute',
