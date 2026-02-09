@@ -1,17 +1,24 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { KataTemplate } from '@/src/models/template';
 import { addTemplate, IMAGES_DIR, ensureStorageReady } from '@/src/storage/repository';
 
+function buildAutoName(date: Date) {
+  const yyyy = date.getFullYear();
+  const mm = `${date.getMonth() + 1}`.padStart(2, '0');
+  const dd = `${date.getDate()}`.padStart(2, '0');
+  const hh = `${date.getHours()}`.padStart(2, '0');
+  const min = `${date.getMinutes()}`.padStart(2, '0');
+  return `型 ${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}
+
 export default function CreateTemplateScreen() {
   const router = useRouter();
   const [selectedUri, setSelectedUri] = useState<string | null>(null);
-  const [name, setName] = useState('');
-  const autoName = useMemo(() => `型 ${new Date().toLocaleString()}`, []);
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -28,9 +35,6 @@ export default function CreateTemplateScreen() {
 
     if (!result.canceled && result.assets[0]?.uri) {
       setSelectedUri(result.assets[0].uri);
-      if (!name) {
-        setName(autoName);
-      }
     }
   };
 
@@ -45,11 +49,12 @@ export default function CreateTemplateScreen() {
     const destination = `${IMAGES_DIR}${id}.jpg`;
     await FileSystem.copyAsync({ from: selectedUri, to: destination });
 
+    const now = new Date();
     const template: KataTemplate = {
       id,
-      name: name.trim() || autoName,
+      name: buildAutoName(now),
       referenceImagePath: destination,
-      createdAt: new Date().toISOString(),
+      createdAt: now.toISOString(),
     };
 
     await addTemplate(template);
@@ -57,25 +62,21 @@ export default function CreateTemplateScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
       <Pressable onPress={pickImage} style={styles.pickButton}>
         <Text style={styles.pickButtonText}>写真を選択</Text>
       </Pressable>
 
       {selectedUri ? <Image source={{ uri: selectedUri }} style={styles.preview} /> : null}
 
-      <Text style={styles.label}>型名</Text>
-      <TextInput
-        placeholder={autoName}
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-      />
-
       <Pressable onPress={saveTemplate} style={styles.saveButton}>
         <Text style={styles.saveButtonText}>保存</Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -83,7 +84,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  contentContainer: {
     padding: 16,
+    paddingBottom: 120,
     gap: 12,
   },
   pickButton: {
@@ -101,16 +105,6 @@ const styles = StyleSheet.create({
     aspectRatio: 3 / 4,
     borderRadius: 12,
     backgroundColor: '#f3f4f6',
-  },
-  label: {
-    fontWeight: '600',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
   },
   saveButton: {
     marginTop: 8,
