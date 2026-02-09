@@ -1,5 +1,6 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 
@@ -33,20 +34,24 @@ export default function CameraScreen() {
   };
 
   return (
-    <View style={StyleSheet.absoluteFill}>
+    <View style={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar hidden />
 
-      {permission?.granted ? <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" /> : null}
+      <View style={styles.previewContainer}>
+        {permission?.granted ? (
+          <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing="back" />
+        ) : null}
 
-      {template?.referenceImagePath ? (
-        <Image
-          pointerEvents="none"
-          source={{ uri: template.referenceImagePath }}
-          style={styles.overlay}
-          resizeMode="cover"
-        />
-      ) : null}
-
+        {template?.referenceImagePath ? (
+          <Image
+            pointerEvents="none"
+            source={{ uri: template.referenceImagePath }}
+            style={styles.overlay}
+            resizeMode="cover"
+          />
+        ) : null}
+      </View>
 
       <Pressable onPress={takePicture} style={styles.shutterOuter}>
         <View style={styles.shutterInner} />
@@ -56,6 +61,14 @@ export default function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  previewContainer: {
+    flex: 1,
+    overflow: 'hidden',
+  },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     opacity: 0.5,
