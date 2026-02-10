@@ -1,17 +1,36 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  FlatList,
+  Image,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 
-import { KataTemplate } from '@/src/models/template';
+import { Template } from '@/src/models/template';
 import { listTemplates } from '@/src/storage/repository';
+
+const GUTTER = 16;
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [templates, setTemplates] = useState<KataTemplate[]>([]);
+  const { width } = useWindowDimensions();
+  const [templates, setTemplates] = useState<Template[]>([]);
+
+  const cardSize = useMemo(() => (width - GUTTER * 3) / 2, [width]);
 
   const loadTemplates = useCallback(async () => {
-    const data = await listTemplates();
-    setTemplates(data);
+    try {
+      const data = await listTemplates();
+      setTemplates(data);
+    } catch {
+      setTemplates([]);
+    }
   }, []);
 
   useFocusEffect(
@@ -20,100 +39,97 @@ export default function HomeScreen() {
     }, [loadTemplates])
   );
 
-  const latestTemplate = templates[0];
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>FRAME</Text>
+    <SafeAreaView style={styles.container}>
+      {templates.length === 0 ? (
+        <View style={styles.emptyStateContainer}>
+          <Ionicons name="images-outline" size={40} color="#9CA3AF" />
+          <Text style={styles.emptyStateText}>まだ型がありません</Text>
+          <Text style={styles.emptyStateSubText}>右下の＋から追加してください</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={templates}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          contentContainerStyle={styles.listContent}
+          columnWrapperStyle={styles.columnWrapper}
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => router.push(`/template/${item.id}`)}
+              style={[styles.card, { width: cardSize, height: cardSize * 1.35 }]}
+            >
+              <Image source={{ uri: item.imageUri }} style={styles.cardImage} resizeMode="cover" />
+            </Pressable>
+          )}
+        />
+      )}
 
-      <Pressable
-        disabled={!latestTemplate}
-        onPress={() => latestTemplate && router.push(`/camera/${latestTemplate.id}`)}
-        style={[styles.primaryButton, !latestTemplate && styles.buttonDisabled]}>
-        <Text style={styles.primaryButtonText}>この型で撮る</Text>
+      <Pressable onPress={() => router.push('/template/create')} style={styles.fab}>
+        <Ionicons name="add" size={34} color="#FFFFFF" />
       </Pressable>
-
-      <Pressable onPress={() => router.push('/template/create')} style={styles.secondaryButton}>
-        <Text style={styles.secondaryButtonText}>型を作る</Text>
-      </Pressable>
-
-      <Text style={styles.sectionTitle}>型一覧（最新順）</Text>
-      <FlatList
-        data={templates}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.emptyText}>まだ型がありません。</Text>}
-        renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/template/${item.id}`)} style={styles.templateCard}>
-            <Text style={styles.templateName}>{item.name}</Text>
-            <Text style={styles.templateDate}>{new Date(item.createdAt).toLocaleString()}</Text>
-          </Pressable>
-        )}
-      />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
+  },
+  listContent: {
     paddingHorizontal: 16,
-    paddingVertical: 24,
-    gap: 12,
+    paddingTop: 16,
+    paddingBottom: 140,
+    gap: 16,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 8,
+  columnWrapper: {
+    gap: 16,
   },
-  primaryButton: {
-    backgroundColor: '#111827',
-    borderRadius: 10,
-    paddingVertical: 14,
+  card: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#F3F4F6',
+    shadowColor: '#0B1220',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  fab: {
+    position: 'absolute',
+    right: 24,
+    bottom: 44,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    backgroundColor: '#2563EB',
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    elevation: 5,
   },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    backgroundColor: '#e5e7eb',
-    borderRadius: 10,
-    paddingVertical: 14,
+  emptyStateContainer: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    gap: 10,
   },
-  secondaryButtonText: {
-    color: '#111827',
-    fontSize: 16,
+  emptyStateText: {
+    color: '#0B1220',
+    fontSize: 18,
     fontWeight: '600',
   },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  sectionTitle: {
-    marginTop: 12,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  emptyText: {
-    color: '#6b7280',
-    marginTop: 12,
-  },
-  templateCard: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 10,
-  },
-  templateName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  templateDate: {
-    marginTop: 4,
-    color: '#6b7280',
-    fontSize: 12,
+  emptyStateSubText: {
+    color: '#6B7280',
+    fontSize: 14,
   },
 });
