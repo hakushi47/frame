@@ -1,22 +1,34 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import * as FileSystem from 'expo-file-system/legacy';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 
-import { KataTemplate } from '@/src/models/template';
-import { getTemplate } from '@/src/storage/repository';
+import { Template } from '@/src/models/template';
+import { SHOTS_DIR, addShot, ensureStorageReady, getTemplate } from '@/src/storage/repository';
 
 export default function CameraScreen() {
   const { templateId } = useLocalSearchParams<{ templateId: string }>();
-  const [permission, requestPermission] = useCameraPermissions();
-  const [template, setTemplate] = useState<KataTemplate | null>(null);
-  const [, setCapturedPhotoUri] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
 
   useEffect(() => {
-    if (!templateId) return;
-    void getTemplate(templateId).then((data) => setTemplate(data ?? null));
+    const load = async () => {
+      if (!templateId) {
+        return;
+      }
+
+      try {
+        const data = await getTemplate(templateId);
+        setTemplate(data ?? null);
+      } catch {
+        Alert.alert('エラー', '型の読み込みに失敗しました。');
+      }
+    };
+
+    void load();
   }, [templateId]);
 
   useEffect(() => {
@@ -25,37 +37,58 @@ export default function CameraScreen() {
     }
   }, [permission?.granted, requestPermission]);
 
-  const takePicture = async () => {
-    if (!cameraRef.current) return;
-    const photo = await cameraRef.current.takePictureAsync();
-    if (photo?.uri) {
-      setCapturedPhotoUri(photo.uri);
+  const handleShutterPress = async () => {
+    if (!cameraRef.current || !templateId || isCapturing) {
+      return;
+    }
+
+    try {
+      setIsCapturing(true);
+      const photo = await cameraRef.current.takePictureAsync({ quality: 1 });
+
+      if (!photo?.uri) {
+        return;
+      }
+
+      await ensureStorageReady();
+
+      const shotId = `${Date.now()}`;
+      const destination = `${SHOTS_DIR}${shotId}.jpg`;
+      await FileSystem.copyAsync({ from: photo.uri, to: destination });
+
+      await addShot({
+        id: shotId,
+        templateId,
+        imagePath: destination,
+        createdAt: new Date().toISOString(),
+        favorite: false,
+      });
+
+      Alert.alert('保存しました');
+    } catch {
+      Alert.alert('エラー', '撮影に失敗しました。');
+    } finally {
+      setIsCapturing(false);
     }
   };
 
   return (
     <View style={styles.root}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar hidden />
+      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
 
-      <View style={styles.previewContainer}>
-        {permission?.granted ? (
-          <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing="back" />
-        ) : null}
+      {template?.imageUri ? (
+        <Image
+          source={{ uri: template.imageUri }}
+          style={styles.overlay}
+          resizeMode="cover"
+        />
+      ) : null}
 
-        {template?.referenceImagePath ? (
-          <Image
-            pointerEvents="none"
-            source={{ uri: template.referenceImagePath }}
-            style={styles.overlay}
-            resizeMode="cover"
-          />
-        ) : null}
+      <View pointerEvents="box-none" style={styles.controlsOverlay}>
+        <Pressable onPress={handleShutterPress} style={styles.shutterOuter}>
+          <View style={styles.shutterInner} />
+        </Pressable>
       </View>
-
-      <Pressable onPress={takePicture} style={styles.shutterOuter}>
-        <View style={styles.shutterInner} />
-      </Pressable>
     </View>
   );
 }
@@ -63,32 +96,31 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: 'black',
-  },
-  previewContainer: {
-    flex: 1,
-    overflow: 'hidden',
+    backgroundColor: '#000000',
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.5,
+    opacity: 0.6,
+  },
+  controlsOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 34,
   },
   shutterOuter: {
-    position: 'absolute',
-    bottom: 36,
-    alignSelf: 'center',
-    width: 74,
-    height: 74,
-    borderRadius: 37,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderColor: '#FFFFFF',
     borderWidth: 4,
-    borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
   shutterInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#fff',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
   },
 });

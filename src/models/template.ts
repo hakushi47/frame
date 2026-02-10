@@ -1,6 +1,5 @@
-export type KataTemplate = {
+export type Template = {
   id: string;
-  name: string;
-  referenceImagePath: string;
   createdAt: string;
+  imageUri: string;
 };

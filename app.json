@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "撮影のためカメラを使用します。",
+        "NSPhotoLibraryUsageDescription": "型画像を選択するため写真ライブラリを使用します。",
+        "NSPhotoLibraryAddUsageDescription": "撮影画像を保存するため写真ライブラリを使用します。"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -35,7 +40,9 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-camera",
+      "expo-image-picker"
     ],
     "experiments": {
       "typedRoutes": true,
