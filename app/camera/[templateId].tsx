@@ -6,34 +6,38 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   GestureResponderEvent,
-  Image,
   LayoutChangeEvent,
   PanResponder,
   Pressable,
   StyleSheet,
   Text,
   View,
+  Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Template } from '@/src/models/template';
 import { SHOTS_DIR, addShot, ensureStorageReady, getTemplate } from '@/src/storage/repository';
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 0.85;
+const DEFAULT_OPACITY = 0.6;
 const TIMER_OPTIONS = [0, 3, 5, 10] as const;
-const SLIDER_HEIGHT = 180;
+const SLIDER_WIDTH = 260;
 
 export default function CameraScreen() {
   const { templateId } = useLocalSearchParams<{ templateId: string }>();
   const cameraRef = useRef<CameraView>(null);
+  const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const [template, setTemplate] = useState<Template | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [mirror, setMirror] = useState(false);
-  const [opacity, setOpacity] = useState(0.6);
+  const [opacity, setOpacity] = useState(DEFAULT_OPACITY);
   const [timerIndex, setTimerIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [sliderHeight, setSliderHeight] = useState(SLIDER_HEIGHT);
+  const [isSliderVisible, setIsSliderVisible] = useState(false);
+  const [sliderWidth, setSliderWidth] = useState(SLIDER_WIDTH);
 
   const timerSeconds = TIMER_OPTIONS[timerIndex];
   const controlsDisabled = isCapturing || countdown !== null;
@@ -131,9 +135,9 @@ export default function CameraScreen() {
   }, [countdown]);
 
   const updateOpacityFromTouch = (event: GestureResponderEvent) => {
-    const locationY = event.nativeEvent.locationY;
-    const clamped = Math.max(0, Math.min(sliderHeight, locationY));
-    const progress = 1 - clamped / sliderHeight;
+    const locationX = event.nativeEvent.locationX;
+    const clamped = Math.max(0, Math.min(sliderWidth, locationX));
+    const progress = clamped / sliderWidth;
     const nextOpacity = MIN_OPACITY + progress * (MAX_OPACITY - MIN_OPACITY);
     setOpacity(Number(nextOpacity.toFixed(3)));
   };
@@ -150,11 +154,11 @@ export default function CameraScreen() {
           updateOpacityFromTouch(event);
         },
       }),
-    [sliderHeight]
+    [sliderWidth]
   );
 
   const handleSliderLayout = (event: LayoutChangeEvent) => {
-    setSliderHeight(event.nativeEvent.layout.height || SLIDER_HEIGHT);
+    setSliderWidth(event.nativeEvent.layout.width || SLIDER_WIDTH);
   };
 
   const sliderProgress = (opacity - MIN_OPACITY) / (MAX_OPACITY - MIN_OPACITY);
@@ -177,7 +181,7 @@ export default function CameraScreen() {
   return (
     <View style={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
-      <CameraView ref={cameraRef} style={[StyleSheet.absoluteFill, mirror && styles.mirror]} facing="back" />
+      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
 
       {template?.imageUri ? (
         <Image
@@ -188,47 +192,59 @@ export default function CameraScreen() {
         />
       ) : null}
 
+      {isSliderVisible ? (
+        <Pressable style={styles.sliderDismissArea} onPress={() => setIsSliderVisible(false)} disabled={controlsDisabled} />
+      ) : null}
+
       {countdown !== null ? (
-        <Pressable style={styles.countdownOverlay} onPress={() => setCountdown(null)}>
+        <View style={styles.countdownOverlay} pointerEvents="none">
           <Text style={styles.countdownText}>{countdown}</Text>
-        </Pressable>
+        </View>
       ) : null}
 
       <View pointerEvents="box-none" style={styles.controlsOverlay}>
-        <View style={styles.rightControls}>
-          <Pressable
-            style={[styles.iconButton, mirror && styles.iconButtonActive]}
-            onPress={() => setMirror((prev) => !prev)}
-            disabled={controlsDisabled}
-          >
-            <Ionicons name={mirror ? 'swap-horizontal' : 'swap-horizontal-outline'} size={24} color="#FFFFFF" />
-          </Pressable>
-
-          <View
-            style={[styles.sliderWrap, controlsDisabled && styles.disabled]}
-            onLayout={handleSliderLayout}
-            {...sliderPanResponder.panHandlers}
-          >
-            <View style={styles.sliderTrack} />
-            <View style={[styles.sliderFill, { height: `${sliderProgress * 100}%` }]} />
-            <View style={[styles.sliderThumb, { bottom: `${sliderProgress * 100}%` }]} />
-          </View>
-
+        <View style={[styles.topBar, { top: insets.top + 10 }, controlsDisabled && styles.disabled]}>
           <Pressable
             style={[styles.iconButton, timerSeconds > 0 && styles.iconButtonActive]}
             onPress={() => setTimerIndex((prev) => (prev + 1) % TIMER_OPTIONS.length)}
             disabled={controlsDisabled}
           >
-            <Ionicons name={timerSeconds > 0 ? 'timer' : 'timer-outline'} size={24} color="#FFFFFF" />
+            <Ionicons name={timerSeconds > 0 ? 'timer' : 'timer-outline'} size={22} color="#FFFFFF" />
             {timerSeconds > 0 ? (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{timerSeconds}</Text>
               </View>
             ) : null}
           </Pressable>
+
+          <Pressable
+            style={[styles.iconButton, mirror && styles.iconButtonActive]}
+            onPress={() => setMirror((prev) => !prev)}
+            disabled={controlsDisabled}
+          >
+            <Ionicons name={mirror ? 'swap-horizontal' : 'swap-horizontal-outline'} size={22} color="#FFFFFF" />
+          </Pressable>
+
+          <Pressable
+            style={[styles.iconButton, isSliderVisible && styles.iconButtonActive]}
+            onPress={() => setIsSliderVisible((prev) => !prev)}
+            disabled={controlsDisabled}
+          >
+            <Ionicons name="options-outline" size={22} color="#FFFFFF" />
+          </Pressable>
         </View>
 
-        <Pressable onPress={() => void handleShutterPress()} style={styles.shutterOuter} disabled={controlsDisabled}>
+        {isSliderVisible ? (
+          <View style={[styles.sliderPanel, { bottom: 150 + insets.bottom }]} pointerEvents="box-none">
+            <View style={styles.sliderPanelInner} onLayout={handleSliderLayout} {...sliderPanResponder.panHandlers}>
+              <View style={styles.sliderTrack} />
+              <View style={[styles.sliderFill, { width: `${sliderProgress * 100}%` }]} />
+              <View style={[styles.sliderThumb, { left: `${sliderProgress * 100}%` }]} />
+            </View>
+          </View>
+        ) : null}
+
+        <Pressable onPress={() => void handleShutterPress()} style={[styles.shutterOuter, { bottom: 34 + insets.bottom }]} disabled={controlsDisabled}>
           <View style={styles.shutterInner} />
         </Pressable>
       </View>
@@ -267,61 +283,29 @@ const styles = StyleSheet.create({
   },
   controlsOverlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingBottom: 34,
   },
-  rightControls: {
+  topBar: {
     position: 'absolute',
-    right: 16,
-    top: '50%',
-    marginTop: -140,
+    right: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 10,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(0,0,0,0.28)',
   },
   iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.42)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconButtonActive: {
-    backgroundColor: 'rgba(255,255,255,0.32)',
-  },
-  sliderWrap: {
-    width: 44,
-    height: SLIDER_HEIGHT,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.42)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  sliderTrack: {
-    position: 'absolute',
-    width: 4,
-    top: 14,
-    bottom: 14,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.24)',
-  },
-  sliderFill: {
-    position: 'absolute',
-    width: 4,
-    bottom: 14,
-    borderRadius: 2,
-    backgroundColor: '#FFFFFF',
-  },
-  sliderThumb: {
-    position: 'absolute',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    marginBottom: 5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.34)',
   },
   badge: {
     position: 'absolute',
@@ -340,7 +324,48 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
+  sliderDismissArea: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sliderPanel: {
+    position: 'absolute',
+    alignSelf: 'center',
+    width: '70%',
+  },
+  sliderPanelInner: {
+    height: 50,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.46)',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    position: 'relative',
+  },
+  sliderTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.28)',
+  },
+  sliderFill: {
+    position: 'absolute',
+    left: 18,
+    top: '50%',
+    height: 4,
+    marginTop: -2,
+    borderRadius: 2,
+    backgroundColor: '#FFFFFF',
+  },
+  sliderThumb: {
+    position: 'absolute',
+    top: '50%',
+    width: 18,
+    height: 18,
+    marginTop: -9,
+    marginLeft: 10,
+    borderRadius: 9,
+    backgroundColor: '#FFFFFF',
+  },
   shutterOuter: {
+    position: 'absolute',
     width: 84,
     height: 84,
     borderRadius: 42,
@@ -359,7 +384,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.18)',
+    backgroundColor: 'rgba(0,0,0,0.22)',
   },
   countdownText: {
     color: '#FFFFFF',
