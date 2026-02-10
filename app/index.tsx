@@ -15,14 +15,15 @@ import {
 import { Template } from '@/src/models/template';
 import { listTemplates } from '@/src/storage/repository';
 
-const GUTTER = 16;
+const GUTTER = 12;
+const CARD_ASPECT_RATIO = 4 / 5;
 
 export default function HomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [templates, setTemplates] = useState<Template[]>([]);
 
-  const cardSize = useMemo(() => (width - GUTTER * 3) / 2, [width]);
+  const cardWidth = useMemo(() => (width - GUTTER * 3) / 2, [width]);
 
   const loadTemplates = useCallback(async () => {
     try {
@@ -57,7 +58,7 @@ export default function HomeScreen() {
           renderItem={({ item }) => (
             <Pressable
               onPress={() => router.push(`/template/${item.id}`)}
-              style={[styles.card, { width: cardSize, height: cardSize * 1.35 }]}
+              style={[styles.card, { width: cardWidth, aspectRatio: CARD_ASPECT_RATIO }]}
             >
               <Image source={{ uri: item.imageUri }} style={styles.cardImage} resizeMode="cover" />
             </Pressable>
@@ -78,23 +79,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 140,
-    gap: 16,
+    paddingHorizontal: GUTTER,
+    paddingTop: GUTTER,
+    paddingBottom: 136,
+    gap: GUTTER,
   },
   columnWrapper: {
-    gap: 16,
+    gap: GUTTER,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     shadowColor: '#0B1220',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
   cardImage: {
     width: '100%',
