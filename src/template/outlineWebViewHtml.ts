@@ -1,11 +1,3 @@
-import {
-  chaikinClosed,
-  distance,
-  processOutlinePoints,
-  simplifyOutlinePoints,
-  smoothOutlinePoints,
-} from '@/lib/outline/smooth';
-
 export function createOutlineWebViewHtml(): string {
   return `<!DOCTYPE html>
 <html>
@@ -21,11 +13,96 @@ export function createOutlineWebViewHtml(): string {
         const MAX_SIDE = 1024;
         const ALPHA_THRESHOLD = 0.5;
         const OUTLINE_LINE_WIDTH = 3;
-        const distance = ${distance.toString()};
-        const simplifyOutlinePoints = ${simplifyOutlinePoints.toString()};
-        const chaikinClosed = ${chaikinClosed.toString()};
-        const smoothOutlinePoints = ${smoothOutlinePoints.toString()};
-        const processOutlinePoints = ${processOutlinePoints.toString()};
+
+        function distance(a, b) {
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          return Math.hypot(dx, dy);
+        }
+
+        function simplifyOutlinePoints(points, tolerance) {
+          const effectiveTolerance = typeof tolerance === 'number' ? tolerance : 2;
+          if (!points || points.length <= 3) {
+            return points ? points.slice() : [];
+          }
+
+          const simplified = [points[0]];
+
+          for (let i = 1; i < points.length; i += 1) {
+            const next = points[i];
+            const last = simplified[simplified.length - 1];
+
+            if (distance(last, next) >= effectiveTolerance) {
+              simplified.push(next);
+            }
+          }
+
+          if (
+            simplified.length > 2
+            && distance(simplified[0], simplified[simplified.length - 1]) < effectiveTolerance
+          ) {
+            simplified.pop();
+          }
+
+          return simplified;
+        }
+
+        function chaikinClosed(points) {
+          const n = points.length;
+          if (n < 3) {
+            return points.slice();
+          }
+
+          const nextPoints = [];
+
+          for (let i = 0; i < n; i += 1) {
+            const current = points[i];
+            const next = points[(i + 1) % n];
+
+            nextPoints.push({
+              x: 0.75 * current.x + 0.25 * next.x,
+              y: 0.75 * current.y + 0.25 * next.y,
+            });
+            nextPoints.push({
+              x: 0.25 * current.x + 0.75 * next.x,
+              y: 0.25 * current.y + 0.75 * next.y,
+            });
+          }
+
+          return nextPoints;
+        }
+
+        function smoothOutlinePoints(points, iterations) {
+          const effectiveIterations = typeof iterations === 'number' ? iterations : 3;
+          if (effectiveIterations <= 0 || points.length < 3) {
+            return points.slice();
+          }
+
+          let smoothed = points.slice();
+
+          for (let i = 0; i < effectiveIterations; i += 1) {
+            smoothed = chaikinClosed(smoothed);
+          }
+
+          return smoothed;
+        }
+
+        function processOutlinePoints(points, options) {
+          const simplifyTolerance = options && typeof options.simplifyTolerance === 'number'
+            ? options.simplifyTolerance
+            : 2;
+          const smoothingIterations = options && typeof options.smoothingIterations === 'number'
+            ? options.smoothingIterations
+            : 3;
+
+          const simplified = simplifyOutlinePoints(points, simplifyTolerance);
+          return smoothOutlinePoints(simplified, smoothingIterations);
+        }
+
+        function createStageError(stage, error) {
+          const detail = error && error.message ? error.message : String(error);
+          return new Error('[' + stage + '] ' + detail);
+        }
 
         function isBoundaryPixel(mask, width, height, x, y) {
           if (x < 0 || y < 0 || x >= width || y >= height) {
@@ -102,7 +179,10 @@ export function createOutlineWebViewHtml(): string {
               }
               found = {
                 next: candidate,
-                backtrack: { x: current.x + dirs[(dirIndex + dirs.length - 1) % dirs.length].x, y: current.y + dirs[(dirIndex + dirs.length - 1) % dirs.length].y },
+                backtrack: {
+                  x: current.x + dirs[(dirIndex + dirs.length - 1) % dirs.length].x,
+                  y: current.y + dirs[(dirIndex + dirs.length - 1) % dirs.length].y,
+                },
               };
               break;
             }
@@ -252,7 +332,9 @@ export function createOutlineWebViewHtml(): string {
             }
 
             const dataUrl = 'data:' + (mimeType || 'image/jpeg') + ';base64,' + base64;
-            const sourceImage = await loadImage(dataUrl);
+            const sourceImage = await loadImage(dataUrl).catch((error) => {
+              throw createStageError('image-load', error);
+            });
             const resized = resizeDimensions(sourceImage.naturalWidth, sourceImage.naturalHeight);
 
             const inputCanvas = document.createElement('canvas');
@@ -269,10 +351,12 @@ export function createOutlineWebViewHtml(): string {
             const results = await new Promise((resolve) => {
               selfieSegmentation.onResults((value) => resolve(value));
               selfieSegmentation.send({ image: inputCanvas });
+            }).catch((error) => {
+              throw createStageError('segmentation-send', error);
             });
 
             if (!results || !results.segmentationMask) {
-              throw new Error('人物マスクを生成できませんでした');
+              throw new Error('[segmentation-mask] 人物マスクを生成できませんでした');
             }
 
             const maskCanvas = document.createElement('canvas');
@@ -295,6 +379,11 @@ export function createOutlineWebViewHtml(): string {
               simplifyTolerance: options && options.simplifyTolerance,
               smoothingIterations: options && options.smoothingIterations,
             });
+
+            if (smoothContour.length < 2) {
+              throw new Error('[contour] 輪郭点が不足しており線PNGを生成できませんでした');
+            }
+
             const pngDataUrl = drawOutlinePng(smoothContour, resized.width, resized.height);
 
             send({ type: 'OUTLINE_RESULT', dataUrl: pngDataUrl });
@@ -315,7 +404,7 @@ export function createOutlineWebViewHtml(): string {
           } catch (error) {
             send({
               type: 'OUTLINE_ERROR',
-              message: error && error.message ? error.message : String(error),
+              message: '[message-parse] ' + (error && error.message ? error.message : String(error)),
             });
           }
         }
