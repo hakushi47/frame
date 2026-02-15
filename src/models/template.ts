@@ -1,5 +1,5 @@
 export type Template = {
   id: string;
-  createdAt: string;
-  imageUri: string;
+  createdAt: number;
+  overlayPngUri: string;
 };

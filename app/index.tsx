@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { Template } from '@/src/models/template';
-import { listTemplates } from '@/src/storage/repository';
+import { listTemplates } from '@/src/storage/templates';
 
 const GUTTER = 12;
 const CARD_ASPECT_RATIO = 4 / 5;
@@ -60,7 +60,7 @@ export default function HomeScreen() {
               onPress={() => router.push(`/template/${item.id}`)}
               style={[styles.card, { width: cardWidth, aspectRatio: CARD_ASPECT_RATIO }]}
             >
-              <Image source={{ uri: item.imageUri }} style={styles.cardImage} resizeMode="cover" />
+              <Image source={{ uri: item.overlayPngUri }} style={styles.cardImage} resizeMode="cover" />
             </Pressable>
           )}
         />

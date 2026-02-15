@@ -17,7 +17,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Template } from '@/src/models/template';
-import { SHOTS_DIR, addShot, ensureStorageReady, getTemplate } from '@/src/storage/repository';
+import { getTemplate } from '@/src/storage/templates';
+import { SHOTS_DIR, addShot, ensureStorageReady } from '@/src/storage/repository';
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 0.85;
@@ -183,9 +184,9 @@ export default function CameraScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
 
-      {template?.imageUri ? (
+      {template?.overlayPngUri ? (
         <Image
-          source={{ uri: template.imageUri }}
+          source={{ uri: template.overlayPngUri }}
           style={[styles.overlay, { opacity }, mirror && styles.mirror]}
           resizeMode="cover"
           pointerEvents="none"
