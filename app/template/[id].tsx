@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { Template } from '@/src/models/template';
-import { deleteTemplate, getTemplate } from '@/src/storage/repository';
+import { deleteTemplate, getTemplate } from '@/src/storage/templates';
 
 export default function TemplateDetailScreen() {
   const router = useRouter();
@@ -65,7 +65,7 @@ export default function TemplateDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Image source={{ uri: template.imageUri }} style={styles.previewImage} resizeMode="cover" />
+        <Image source={{ uri: template.overlayPngUri }} style={styles.previewImage} resizeMode="cover" />
 
         <Pressable onPress={() => router.push(`/camera/${template.id}`)} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>撮影する</Text>
