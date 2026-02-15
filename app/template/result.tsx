@@ -179,20 +179,20 @@ export default function TemplateResultScreen() {
       />
 
       <View style={styles.container}>
-        {isGenerating ? (
-          <View style={styles.centerContent}>
-            <ActivityIndicator size="large" color="#2563EB" />
-            <Text style={styles.loadingText}>生成中…</Text>
-          </View>
-        ) : outlineDataUrl ? (
-          <View style={styles.resultArea}>
-            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
-          </View>
-        ) : (
-          <View style={styles.centerContent}>
-            <Text style={styles.errorText}>生成に失敗しました{generationError ? `（原因: ${generationError}）` : ''}</Text>
-          </View>
-        )}
+        <View style={styles.resultArea}>
+          {isGenerating ? (
+            <View style={styles.centerContent}>
+              <ActivityIndicator size="large" color="#2563EB" />
+              <Text style={styles.loadingText}>生成中…</Text>
+            </View>
+          ) : outlineDataUrl ? (
+            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} />
+          ) : (
+            <View style={styles.centerContent}>
+              <Text style={styles.errorText}>生成に失敗しました{generationError ? `（原因: ${generationError}）` : ''}</Text>
+            </View>
+          )}
+        </View>
 
         <View style={styles.buttonRow}>
           <Pressable
@@ -238,18 +238,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   resultArea: {
+    // 変更: 中央の角丸コンテナを画面の約65〜70%で確保
     flex: 1,
+    minHeight: '65%',
+    maxHeight: '70%',
+    width: '100%',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    // 変更: 画像をコンテナ全面で中央配置できるように調整
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
     backgroundColor: '#FFFFFF',
   },
   resultImage: {
+    // 変更: 余白なしでコンテナいっぱいに表示（アスペクト比維持）
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
   buttonRow: {
     flexDirection: 'row',
