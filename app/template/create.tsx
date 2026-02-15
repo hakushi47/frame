@@ -44,6 +44,7 @@ export default function CreateTemplateScreen() {
   const [outlineDataUrl, setOutlineDataUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const requestOutline = useCallback(
     (image: PendingImage) => {
@@ -92,14 +93,16 @@ export default function CreateTemplateScreen() {
       setSourcePreviewUri(selected.uri);
       setOutlineDataUrl(null);
       setPendingImage(nextPending);
+      setGenerationError(null);
       setIsGenerating(true);
 
       if (isWebViewReady) {
         requestOutline(nextPending);
       }
-    } catch {
+    } catch (error) {
       setIsGenerating(false);
-      Alert.alert('エラー', '画像の選択に失敗しました。');
+      const detail = error instanceof Error ? error.message : String(error);
+      Alert.alert('エラー', `画像の選択に失敗しました: ${detail}`);
     }
   };
 
@@ -121,17 +124,22 @@ export default function CreateTemplateScreen() {
 
         if (message.type === 'OUTLINE_RESULT' && message.dataUrl) {
           setOutlineDataUrl(message.dataUrl);
+          setGenerationError(null);
           setIsGenerating(false);
           return;
         }
 
         if (message.type === 'OUTLINE_ERROR') {
           setIsGenerating(false);
-          Alert.alert('生成エラー', message.message ?? '型の生成に失敗しました。ネットワーク環境を確認してください。');
+          const detail = message.message ?? '不明なエラーが発生しました';
+          setGenerationError(detail);
+          Alert.alert('生成エラー', `線PNG生成に失敗しました: ${detail}`);
         }
-      } catch {
+      } catch (error) {
         setIsGenerating(false);
-        Alert.alert('エラー', '生成結果の読み取りに失敗しました。');
+        const detail = error instanceof Error ? error.message : String(error);
+        setGenerationError(detail);
+        Alert.alert('エラー', `生成結果の読み取りに失敗しました: ${detail}`);
       }
     },
     [pendingImage, requestOutline]
@@ -166,8 +174,9 @@ export default function CreateTemplateScreen() {
 
       await addTemplate(template);
       router.replace('/');
-    } catch {
-      Alert.alert('エラー', '保存に失敗しました。');
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      Alert.alert('エラー', `保存に失敗しました: ${detail}`);
     } finally {
       setIsSaving(false);
     }
@@ -199,6 +208,7 @@ export default function CreateTemplateScreen() {
           <View style={styles.outlinePreviewCanvas}>
             {outlineDataUrl ? <Image source={{ uri: outlineDataUrl }} style={styles.previewImage} resizeMode="contain" /> : <Text style={styles.placeholderText}>{isGenerating ? '型を生成中...' : '写真を選択すると外周線を生成します'}</Text>}
           </View>
+          {generationError ? <Text style={styles.errorText}>エラー詳細: {generationError}</Text> : null}
         </View>
 
         {outlineDataUrl ? (
@@ -273,6 +283,11 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: '#6B7280',
     fontSize: 14,
+  },
+  errorText: {
+    color: '#B91C1C',
+    fontSize: 13,
+    lineHeight: 18,
   },
   saveButton: {
     minHeight: 56,
