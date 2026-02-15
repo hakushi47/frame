@@ -186,7 +186,7 @@ export default function TemplateResultScreen() {
               <Text style={styles.loadingText}>生成中…</Text>
             </View>
           ) : outlineDataUrl ? (
-            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} />
+            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
           ) : (
             <View style={styles.centerContent}>
               <Text style={styles.errorText}>生成に失敗しました{generationError ? `（原因: ${generationError}）` : ''}</Text>
@@ -224,7 +224,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 16,
   },
   centerContent: {
     flex: 1,
@@ -238,30 +237,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   resultArea: {
-    // 変更: 中央の角丸コンテナを画面の約65〜70%で確保
     flex: 1,
-    minHeight: '65%',
-    maxHeight: '70%',
-    width: '100%',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    // 変更: 画像をコンテナ全面で中央配置できるように調整
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
+    borderRadius: 24,
     overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#FFFFFF',
   },
   resultImage: {
-    // 変更: 余白なしでコンテナいっぱいに表示（アスペクト比維持）
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   buttonRow: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   primaryButton: {
     flex: 1,
