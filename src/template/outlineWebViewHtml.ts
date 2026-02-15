@@ -1,3 +1,11 @@
+import {
+  chaikinClosed,
+  distance,
+  processOutlinePoints,
+  simplifyOutlinePoints,
+  smoothOutlinePoints,
+} from '@/lib/outline/smooth';
+
 export function createOutlineWebViewHtml(): string {
   return `<!DOCTYPE html>
 <html>
@@ -12,6 +20,107 @@ export function createOutlineWebViewHtml(): string {
       (function () {
         const MAX_SIDE = 1024;
         const ALPHA_THRESHOLD = 0.5;
+        const OUTLINE_LINE_WIDTH = 3;
+        const distance = ${distance.toString()};
+        const simplifyOutlinePoints = ${simplifyOutlinePoints.toString()};
+        const chaikinClosed = ${chaikinClosed.toString()};
+        const smoothOutlinePoints = ${smoothOutlinePoints.toString()};
+        const processOutlinePoints = ${processOutlinePoints.toString()};
+
+        function isBoundaryPixel(mask, width, height, x, y) {
+          if (x < 0 || y < 0 || x >= width || y >= height) {
+            return false;
+          }
+          const index = y * width + x;
+          if (!mask[index]) {
+            return false;
+          }
+
+          for (let oy = -1; oy <= 1; oy += 1) {
+            for (let ox = -1; ox <= 1; ox += 1) {
+              if (!ox && !oy) {
+                continue;
+              }
+              const nx = x + ox;
+              const ny = y + oy;
+              if (nx < 0 || ny < 0 || nx >= width || ny >= height || !mask[ny * width + nx]) {
+                return true;
+              }
+            }
+          }
+          return false;
+        }
+
+        function traceOuterContour(mask, width, height) {
+          const dirs = [
+            { x: 1, y: 0 },
+            { x: 1, y: 1 },
+            { x: 0, y: 1 },
+            { x: -1, y: 1 },
+            { x: -1, y: 0 },
+            { x: -1, y: -1 },
+            { x: 0, y: -1 },
+            { x: 1, y: -1 },
+          ];
+
+          let start = null;
+          for (let y = 0; y < height && !start; y += 1) {
+            for (let x = 0; x < width; x += 1) {
+              if (isBoundaryPixel(mask, width, height, x, y)) {
+                start = { x, y };
+                break;
+              }
+            }
+          }
+
+          if (!start) {
+            return [];
+          }
+
+          const points = [];
+          let current = start;
+          let previous = { x: start.x - 1, y: start.y };
+          const maxSteps = width * height * 2;
+
+          for (let step = 0; step < maxSteps; step += 1) {
+            points.push({ x: current.x, y: current.y });
+
+            let baseDir = 0;
+            for (let d = 0; d < dirs.length; d += 1) {
+              if (current.x + dirs[d].x === previous.x && current.y + dirs[d].y === previous.y) {
+                baseDir = d;
+                break;
+              }
+            }
+
+            let found = null;
+            for (let i = 1; i <= dirs.length; i += 1) {
+              const dirIndex = (baseDir + i) % dirs.length;
+              const candidate = { x: current.x + dirs[dirIndex].x, y: current.y + dirs[dirIndex].y };
+              if (!isBoundaryPixel(mask, width, height, candidate.x, candidate.y)) {
+                continue;
+              }
+              found = {
+                next: candidate,
+                backtrack: { x: current.x + dirs[(dirIndex + dirs.length - 1) % dirs.length].x, y: current.y + dirs[(dirIndex + dirs.length - 1) % dirs.length].y },
+              };
+              break;
+            }
+
+            if (!found) {
+              break;
+            }
+
+            previous = found.backtrack;
+            current = found.next;
+
+            if (current.x === start.x && current.y === start.y && points.length > 20) {
+              break;
+            }
+          }
+
+          return points;
+        }
 
         function send(message) {
           window.ReactNativeWebView.postMessage(JSON.stringify(message));
@@ -110,7 +219,33 @@ export function createOutlineWebViewHtml(): string {
           return dilate(boundary, width, height, 1);
         }
 
-        async function runOutline(base64, mimeType) {
+        function drawOutlinePng(points, width, height) {
+          const outputCanvas = document.createElement('canvas');
+          outputCanvas.width = width;
+          outputCanvas.height = height;
+
+          const outputCtx = outputCanvas.getContext('2d', { alpha: true, desynchronized: false });
+          outputCtx.clearRect(0, 0, width, height);
+          outputCtx.imageSmoothingEnabled = true;
+          outputCtx.lineWidth = OUTLINE_LINE_WIDTH;
+          outputCtx.strokeStyle = '#000000';
+          outputCtx.lineJoin = 'round';
+          outputCtx.lineCap = 'round';
+
+          if (points.length > 1) {
+            outputCtx.beginPath();
+            outputCtx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i += 1) {
+              outputCtx.lineTo(points[i].x, points[i].y);
+            }
+            outputCtx.closePath();
+            outputCtx.stroke();
+          }
+
+          return outputCanvas.toDataURL('image/png');
+        }
+
+        async function runOutline(base64, mimeType, options) {
           try {
             if (!window.SelfieSegmentation) {
               throw new Error('Selfie Segmentationの読み込みに失敗しました');
@@ -155,27 +290,12 @@ export function createOutlineWebViewHtml(): string {
             }
 
             const boundaryMask = buildBoundaryMask(personMask, resized.width, resized.height);
-
-            const outputCanvas = document.createElement('canvas');
-            outputCanvas.width = resized.width;
-            outputCanvas.height = resized.height;
-            const outputCtx = outputCanvas.getContext('2d');
-            const outputImageData = outputCtx.createImageData(resized.width, resized.height);
-
-            for (let i = 0; i < boundaryMask.length; i += 1) {
-              if (!boundaryMask[i]) {
-                continue;
-              }
-
-              const base = i * 4;
-              outputImageData.data[base] = 0;
-              outputImageData.data[base + 1] = 0;
-              outputImageData.data[base + 2] = 0;
-              outputImageData.data[base + 3] = 255;
-            }
-
-            outputCtx.putImageData(outputImageData, 0, 0);
-            const pngDataUrl = outputCanvas.toDataURL('image/png');
+            const rawContour = traceOuterContour(boundaryMask, resized.width, resized.height);
+            const smoothContour = processOutlinePoints(rawContour, {
+              simplifyTolerance: options && options.simplifyTolerance,
+              smoothingIterations: options && options.smoothingIterations,
+            });
+            const pngDataUrl = drawOutlinePng(smoothContour, resized.width, resized.height);
 
             send({ type: 'OUTLINE_RESULT', dataUrl: pngDataUrl });
           } catch (error) {
@@ -190,7 +310,7 @@ export function createOutlineWebViewHtml(): string {
           try {
             const payload = JSON.parse(event.data);
             if (payload.type === 'RUN_OUTLINE' && payload.base64) {
-              runOutline(payload.base64, payload.mimeType);
+              runOutline(payload.base64, payload.mimeType, payload.options);
             }
           } catch (error) {
             send({

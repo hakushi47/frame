@@ -23,6 +23,18 @@ type PendingImage = {
   mimeType: string;
 };
 
+type OutlineProcessingOptions = {
+  // 輪郭の角を丸める反復回数（2〜4あたりで調整推奨）
+  smoothingIterations: number;
+  // 輪郭点の間引き許容距離(px)
+  simplifyTolerance: number;
+};
+
+const DEFAULT_OUTLINE_OPTIONS: OutlineProcessingOptions = {
+  smoothingIterations: 3,
+  simplifyTolerance: 2.0,
+};
+
 export default function CreateTemplateScreen() {
   const router = useRouter();
   const webViewRef = useRef<WebView>(null);
@@ -40,6 +52,7 @@ export default function CreateTemplateScreen() {
           type: 'RUN_OUTLINE',
           base64: image.base64,
           mimeType: image.mimeType,
+          options: DEFAULT_OUTLINE_OPTIONS,
         })
       );
     },
