@@ -192,14 +192,16 @@ export default function TemplateResultScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <View style={[styles.previewOuter, { paddingTop: headerHeight + 12 }]}>
+      <View style={[styles.previewOuter, { paddingTop: headerHeight }]}>
         {isGenerating ? (
           <View style={styles.centerContent}>
             <ActivityIndicator size="large" color="#2563EB" />
             <Text style={styles.loadingText}>生成中…</Text>
           </View>
         ) : outlineDataUrl ? (
-          <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
+          </View>
         ) : (
           <View style={styles.centerContent}>
             <Text style={styles.errorText}>生成に失敗しました{generationError ? `（原因: ${generationError}）` : ''}</Text>
@@ -271,8 +273,9 @@ const styles = StyleSheet.create({
   },
   previewOuter: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+  },
+  imageContainer: {
+    flex: 1,
   },
   centerContent: {
     flex: 1,
@@ -286,8 +289,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   resultImage: {
+    flex: 1,
     width: '100%',
-    height: '100%',
   },
   footer: {
     flexDirection: 'row',
