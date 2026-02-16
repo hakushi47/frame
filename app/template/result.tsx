@@ -187,7 +187,6 @@ export default function TemplateResultScreen() {
           <Text style={styles.backButtonText}>戻る</Text>
         </Pressable>
         <Text style={styles.headerTitle}>生成結果</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.previewOuter}>
@@ -238,7 +237,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
@@ -254,13 +252,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   headerTitle: {
+    flex: 1,
     color: '#0B1220',
     fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
-  },
-  headerSpacer: {
-    minWidth: 64,
   },
   previewOuter: {
     flex: 1,
