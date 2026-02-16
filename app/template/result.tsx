@@ -7,11 +7,11 @@ import {
   Alert,
   Image,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
 import { Template } from '@/src/models/template';
@@ -37,7 +37,10 @@ const DEFAULT_OUTLINE_OPTIONS: OutlineProcessingOptions = {
   simplifyTolerance: 2.0,
 };
 
+const BUTTON_AREA_HEIGHT = 84;
+
 export default function TemplateResultScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { pendingId } = useLocalSearchParams<{ pendingId?: string }>();
   const webViewRef = useRef<WebView>(null);
@@ -169,7 +172,7 @@ export default function TemplateResultScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <WebView
@@ -190,24 +193,29 @@ export default function TemplateResultScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <View style={styles.previewOuter}>
-        <View style={styles.previewFrame}>
-          {isGenerating ? (
-            <View style={styles.centerContent}>
-              <ActivityIndicator size="large" color="#2563EB" />
-              <Text style={styles.loadingText}>生成中…</Text>
-            </View>
-          ) : outlineDataUrl ? (
-            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
-          ) : (
-            <View style={styles.centerContent}>
-              <Text style={styles.errorText}>生成に失敗しました{generationError ? `（原因: ${generationError}）` : ''}</Text>
-            </View>
-          )}
-        </View>
+      <View
+        style={[
+          styles.previewOuter,
+          {
+            paddingBottom: BUTTON_AREA_HEIGHT + insets.bottom,
+          },
+        ]}
+      >
+        {isGenerating ? (
+          <View style={styles.centerContent}>
+            <ActivityIndicator size="large" color="#2563EB" />
+            <Text style={styles.loadingText}>生成中…</Text>
+          </View>
+        ) : outlineDataUrl ? (
+          <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
+        ) : (
+          <View style={styles.centerContent}>
+            <Text style={styles.errorText}>生成に失敗しました{generationError ? `（原因: ${generationError}）` : ''}</Text>
+          </View>
+        )}
       </View>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Pressable
           onPress={saveTemplate}
           disabled={!outlineDataUrl || isSaving || isGenerating}
@@ -269,13 +277,7 @@ const styles = StyleSheet.create({
   previewOuter: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  previewFrame: {
-    flex: 1,
-    borderRadius: 24,
-    backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
+    paddingTop: 12,
   },
   centerContent: {
     flex: 1,
@@ -293,11 +295,15 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
   },
   primaryButton: {
     flex: 1,
