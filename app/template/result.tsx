@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
 import { Template } from '@/src/models/template';
@@ -38,6 +38,8 @@ const DEFAULT_OUTLINE_OPTIONS: OutlineProcessingOptions = {
 };
 
 export default function TemplateResultScreen() {
+  const insets = useSafeAreaInsets();
+  const headerHeight = 56 + insets.top;
   const router = useRouter();
   const { pendingId } = useLocalSearchParams<{ pendingId?: string }>();
   const webViewRef = useRef<WebView>(null);
@@ -169,7 +171,7 @@ export default function TemplateResultScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <WebView
@@ -181,15 +183,16 @@ export default function TemplateResultScreen() {
         javaScriptEnabled
       />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top, height: headerHeight }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button">
           <Ionicons name="chevron-back" size={22} color="#0B1220" />
           <Text style={styles.backButtonText}>戻る</Text>
         </Pressable>
         <Text style={styles.headerTitle}>生成結果</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
-      <View style={styles.previewOuter}>
+      <View style={[styles.previewOuter, { paddingTop: headerHeight + 12 }]}>
         {isGenerating ? (
           <View style={styles.centerContent}>
             <ActivityIndicator size="large" color="#2563EB" />
@@ -217,7 +220,7 @@ export default function TemplateResultScreen() {
           <Text style={styles.secondaryButtonText}>やり直す</Text>
         </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -233,10 +236,15 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   header: {
-    height: 56,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
@@ -258,10 +266,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  headerSpacer: {
+    width: 64,
+  },
   previewOuter: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 12,
     paddingBottom: 12,
   },
   centerContent: {
@@ -284,7 +294,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 16,
+    paddingBottom: 20,
     backgroundColor: '#FFFFFF',
   },
   primaryButton: {
