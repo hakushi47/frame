@@ -181,44 +181,44 @@ export default function TemplateResultScreen() {
         javaScriptEnabled
       />
 
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button">
-            <Ionicons name="chevron-back" size={22} color="#0B1220" />
-            <Text style={styles.backButtonText}>戻る</Text>
-          </Pressable>
-          <Text style={styles.headerTitle}>生成結果</Text>
-          <View style={styles.headerSpacer} />
-        </View>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button">
+          <Ionicons name="chevron-back" size={22} color="#0B1220" />
+          <Text style={styles.backButtonText}>戻る</Text>
+        </Pressable>
+        <Text style={styles.headerTitle}>生成結果</Text>
+        <View style={styles.headerSpacer} />
+      </View>
 
-        <View style={styles.previewContainer}>
+      <View style={styles.previewOuter}>
+        <View style={styles.previewFrame}>
           {isGenerating ? (
             <View style={styles.centerContent}>
               <ActivityIndicator size="large" color="#2563EB" />
               <Text style={styles.loadingText}>生成中…</Text>
             </View>
           ) : outlineDataUrl ? (
-            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="cover" />
+            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
           ) : (
             <View style={styles.centerContent}>
               <Text style={styles.errorText}>生成に失敗しました{generationError ? `（原因: ${generationError}）` : ''}</Text>
             </View>
           )}
         </View>
+      </View>
 
-        <View style={styles.footer}>
-          <Pressable
-            onPress={saveTemplate}
-            disabled={!outlineDataUrl || isSaving || isGenerating}
-            style={[styles.primaryButton, (!outlineDataUrl || isSaving || isGenerating) && styles.buttonDisabled]}
-          >
-            <Text style={styles.primaryButtonText}>{isSaving ? '保存中...' : '保存'}</Text>
-          </Pressable>
+      <View style={styles.footer}>
+        <Pressable
+          onPress={saveTemplate}
+          disabled={!outlineDataUrl || isSaving || isGenerating}
+          style={[styles.primaryButton, (!outlineDataUrl || isSaving || isGenerating) && styles.buttonDisabled]}
+        >
+          <Text style={styles.primaryButtonText}>{isSaving ? '保存中...' : '保存'}</Text>
+        </Pressable>
 
-          <Pressable onPress={retry} style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>やり直す</Text>
-          </Pressable>
-        </View>
+        <Pressable onPress={retry} style={styles.secondaryButton}>
+          <Text style={styles.secondaryButtonText}>やり直す</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -230,12 +230,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   hiddenWebView: {
+    position: 'absolute',
     width: 1,
     height: 1,
-    opacity: 0.01,
-  },
-  container: {
-    flex: 1,
+    opacity: 0,
   },
   header: {
     minHeight: 56,
@@ -268,11 +266,13 @@ const styles = StyleSheet.create({
   headerSpacer: {
     minWidth: 64,
   },
-  previewContainer: {
+  previewOuter: {
     flex: 1,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  previewFrame: {
+    flex: 1,
     borderRadius: 24,
     backgroundColor: '#FFFFFF',
     overflow: 'hidden',
@@ -295,8 +295,9 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     gap: 12,
-    marginHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   primaryButton: {
     flex: 1,
