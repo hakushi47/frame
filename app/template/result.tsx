@@ -179,7 +179,11 @@ export default function TemplateResultScreen() {
       />
 
       <View style={styles.container}>
-        <View style={styles.resultArea}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>生成結果</Text>
+        </View>
+
+        <View style={styles.previewContainer}>
           {isGenerating ? (
             <View style={styles.centerContent}>
               <ActivityIndicator size="large" color="#2563EB" />
@@ -194,7 +198,7 @@ export default function TemplateResultScreen() {
           )}
         </View>
 
-        <View style={styles.buttonRow}>
+        <View style={styles.footer}>
           <Pressable
             onPress={saveTemplate}
             disabled={!outlineDataUrl || isSaving || isGenerating}
@@ -225,6 +229,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  headerTitle: {
+    color: '#0B1220',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  previewContainer: {
+    flex: 1,
+    marginHorizontal: 16,
+    marginVertical: 16,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
   centerContent: {
     flex: 1,
     alignItems: 'center',
@@ -236,20 +258,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  resultArea: {
-    flex: 1,
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 16,
-    borderRadius: 24,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-  },
   resultImage: {
     width: '100%',
     height: '100%',
   },
-  buttonRow: {
+  footer: {
     flexDirection: 'row',
     gap: 12,
     marginHorizontal: 16,
