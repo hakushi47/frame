@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
 import { Template } from '@/src/models/template';
@@ -37,10 +37,7 @@ const DEFAULT_OUTLINE_OPTIONS: OutlineProcessingOptions = {
   simplifyTolerance: 2.0,
 };
 
-const BUTTON_AREA_HEIGHT = 84;
-
 export default function TemplateResultScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { pendingId } = useLocalSearchParams<{ pendingId?: string }>();
   const webViewRef = useRef<WebView>(null);
@@ -172,7 +169,7 @@ export default function TemplateResultScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <WebView
@@ -193,14 +190,7 @@ export default function TemplateResultScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <View
-        style={[
-          styles.previewOuter,
-          {
-            paddingBottom: BUTTON_AREA_HEIGHT + insets.bottom,
-          },
-        ]}
-      >
+      <View style={styles.previewOuter}>
         {isGenerating ? (
           <View style={styles.centerContent}>
             <ActivityIndicator size="large" color="#2563EB" />
@@ -215,7 +205,7 @@ export default function TemplateResultScreen() {
         )}
       </View>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View style={styles.footer}>
         <Pressable
           onPress={saveTemplate}
           disabled={!outlineDataUrl || isSaving || isGenerating}
@@ -244,13 +234,11 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   header: {
-    minHeight: 56,
+    height: 56,
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
@@ -267,8 +255,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#0B1220',
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     textAlign: 'center',
   },
   headerSpacer: {
@@ -278,6 +266,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
+    paddingBottom: 12,
   },
   centerContent: {
     flex: 1,
@@ -295,14 +284,11 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 16,
     paddingTop: 8,
+    paddingBottom: 16,
     backgroundColor: '#FFFFFF',
   },
   primaryButton: {
