@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -169,6 +170,8 @@ export default function TemplateResultScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <Stack.Screen options={{ headerShown: false }} />
+
       <WebView
         ref={webViewRef}
         source={{ html: createOutlineWebViewHtml() }}
@@ -180,7 +183,12 @@ export default function TemplateResultScreen() {
 
       <View style={styles.container}>
         <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button">
+            <Ionicons name="chevron-back" size={22} color="#0B1220" />
+            <Text style={styles.backButtonText}>戻る</Text>
+          </Pressable>
           <Text style={styles.headerTitle}>生成結果</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
         <View style={styles.previewContainer}>
@@ -190,7 +198,7 @@ export default function TemplateResultScreen() {
               <Text style={styles.loadingText}>生成中…</Text>
             </View>
           ) : outlineDataUrl ? (
-            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
+            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="cover" />
           ) : (
             <View style={styles.centerContent}>
               <Text style={styles.errorText}>生成に失敗しました{generationError ? `（原因: ${generationError}）` : ''}</Text>
@@ -230,19 +238,41 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
+    minHeight: 56,
+    paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 64,
+    gap: 2,
+  },
+  backButtonText: {
+    color: '#0B1220',
+    fontSize: 16,
+    fontWeight: '500',
   },
   headerTitle: {
     color: '#0B1220',
     fontSize: 20,
     fontWeight: '700',
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    minWidth: 64,
   },
   previewContainer: {
     flex: 1,
     marginHorizontal: 16,
-    marginVertical: 16,
+    marginTop: 12,
+    marginBottom: 12,
     borderRadius: 24,
     backgroundColor: '#FFFFFF',
     overflow: 'hidden',
