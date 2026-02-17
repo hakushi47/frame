@@ -63,7 +63,7 @@ export default function CreateTemplateScreen() {
     });
 
     router.push({
-      pathname: '/template/result',
+      pathname: '/template/result2',
       params: { pendingId },
     });
   };
