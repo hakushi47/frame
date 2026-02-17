@@ -2,17 +2,8 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
 import { Template } from '@/src/models/template';
@@ -171,7 +162,7 @@ export default function TemplateResultScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <WebView
@@ -192,16 +183,14 @@ export default function TemplateResultScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <View style={styles.previewOuter}>
+      <View style={styles.previewArea}>
         {isGenerating ? (
           <View style={styles.centerContent}>
             <ActivityIndicator size="large" color="#2563EB" />
             <Text style={styles.loadingText}>生成中…</Text>
           </View>
         ) : outlineDataUrl ? (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
-          </View>
+          <Image source={{ uri: outlineDataUrl }} style={styles.resultImage} resizeMode="contain" />
         ) : (
           <View style={styles.centerContent}>
             <Text style={styles.errorText}>生成に失敗しました{generationError ? `（原因: ${generationError}）` : ''}</Text>
@@ -267,13 +256,11 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 64,
   },
-  previewOuter: {
+  previewArea: {
     flex: 1,
-    position: 'relative',
-  },
-  imageContainer: {
-    flex: 1,
-    position: 'relative',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   centerContent: {
     flex: 1,
@@ -287,9 +274,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   resultImage: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     width: '100%',
-    height: '100%',
   },
   footer: {
     flexDirection: 'row',
