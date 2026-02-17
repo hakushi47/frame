@@ -39,7 +39,6 @@ const DEFAULT_OUTLINE_OPTIONS: OutlineProcessingOptions = {
 
 export default function TemplateResultScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = 56 + insets.top;
   const router = useRouter();
   const { pendingId } = useLocalSearchParams<{ pendingId?: string }>();
   const webViewRef = useRef<WebView>(null);
@@ -183,7 +182,7 @@ export default function TemplateResultScreen() {
         javaScriptEnabled
       />
 
-      <View style={[styles.header, { paddingTop: insets.top, height: headerHeight }]}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button">
           <Ionicons name="chevron-back" size={22} color="#0B1220" />
           <Text style={styles.backButtonText}>戻る</Text>
@@ -192,7 +191,7 @@ export default function TemplateResultScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <View style={[styles.previewOuter, { paddingTop: headerHeight }]}>
+      <View style={styles.previewOuter}>
         {isGenerating ? (
           <View style={styles.centerContent}>
             <ActivityIndicator size="large" color="#2563EB" />
@@ -209,7 +208,7 @@ export default function TemplateResultScreen() {
         )}
       </View>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 12, 20) }]}>
         <Pressable
           onPress={saveTemplate}
           disabled={!outlineDataUrl || isSaving || isGenerating}
@@ -238,11 +237,8 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+    minHeight: 56,
+    paddingBottom: 8,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -273,9 +269,11 @@ const styles = StyleSheet.create({
   },
   previewOuter: {
     flex: 1,
+    position: 'relative',
   },
   imageContainer: {
     flex: 1,
+    position: 'relative',
   },
   centerContent: {
     flex: 1,
@@ -289,15 +287,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   resultImage: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     width: '100%',
+    height: '100%',
   },
   footer: {
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 20,
     backgroundColor: '#FFFFFF',
   },
   primaryButton: {
