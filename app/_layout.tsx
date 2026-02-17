@@ -11,6 +11,7 @@ export default function RootLayout() {
       <Stack.Screen name="index" options={{ title: '型一覧' }} />
       <Stack.Screen name="template/create" options={{ title: '型作成' }} />
       <Stack.Screen name="template/result" options={{ title: '生成結果' }} />
+      <Stack.Screen name="template/result2" options={{ title: '生成結果' }} />
       <Stack.Screen name="template/[id]" options={{ title: '型詳細' }} />
       <Stack.Screen
         name="camera/[templateId]"
