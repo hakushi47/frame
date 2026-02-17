@@ -7,6 +7,7 @@ import {
   Alert,
   Image,
   Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -170,7 +171,7 @@ export default function TemplateResultScreen() {
   };
 
   return (
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <WebView
@@ -182,7 +183,7 @@ export default function TemplateResultScreen() {
         javaScriptEnabled
       />
 
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button">
           <Ionicons name="chevron-back" size={22} color="#0B1220" />
           <Text style={styles.backButtonText}>戻る</Text>
@@ -221,7 +222,7 @@ export default function TemplateResultScreen() {
           <Text style={styles.secondaryButtonText}>やり直す</Text>
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -237,8 +238,7 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   header: {
-    minHeight: 56,
-    paddingBottom: 8,
+    height: 56,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
